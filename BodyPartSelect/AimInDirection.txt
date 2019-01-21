@@ -1,0 +1,34 @@
+void UFGCharacterAnimInstance::SetAimRotation(float DeltaSeconds, const FRotator& Rotation)
+{
+	FRotator CharacterAimRotator;
+
+	if (OwnerCharacter->TargetSelectionComp->CurrentTarget != OwnerCharacter)
+	{
+		FVector CharacterAimDirection = OwnerCharacter->TargetSelectionComp->CurrentTarget->GetActorLocation() - OwnerCharacter->GetActorLocation();
+
+		if (OwnerCharacter->CombatComp->CurrentBodyPartTarget != EFGBodyPart::BP_Default)
+		{
+			CharacterAimDirection = OwnerCharacter->TargetSelectionComp->CurrentTarget->GetBodyPartLocation(
+				OwnerCharacter->CombatComp->CurrentBodyPartTarget) - OwnerCharacter->GetActorLocation();
+		}
+
+		CharacterAimRotator = CharacterAimDirection.ToOrientationRotator();
+	}
+
+	float CharacterAimYaw = CharacterAimRotator.Yaw;
+	float CharacterAimPitch = CharacterAimRotator.Pitch;
+
+	FRotator TargetAimRotator = FRotator(CharacterAimPitch, CharacterAimYaw, 0);
+	FRotator CurrentAimRotator = FRotator(AimPitch, AimYaw, 0);
+
+	FRotator DeltaRotator = UKismetMathLibrary::NormalizedDeltaRotator(TargetAimRotator, Rotation);
+
+	float RotateSpeed = OwnerPlayer->GetAimSpeed();
+
+	FRotator RInterpRotator = UKismetMathLibrary::RInterpTo(CurrentAimRotator, DeltaRotator, DeltaSeconds, RotateSpeed);
+	UKismetMathLibrary::ClampAngle(AimPitch, -90, 90);
+	UKismetMathLibrary::ClampAngle(AimYaw, -90, 90);
+
+	AimPitch = RInterpRotator.Pitch;
+	AimYaw = RInterpRotator.Yaw;
+}
